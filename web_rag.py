@@ -17,6 +17,7 @@ def build_store():
         api_key=api_key,
         base_url=base_url,
         check_embedding_ctx_length=False,
+        chunk_size=10,   # 阿里云 embedding 每次最多处理 10 条，分批发
     )
     with open(r"地质灾害防治条例.txt", "r", encoding="utf-8") as f:
         text = f.read()

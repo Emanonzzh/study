@@ -13,9 +13,10 @@
 - Day 16-17：Streamlit 网页版（RAG + 多工具 Agent）✅
 - Day 18：Git/GitHub 上传项目 ✅
 - 进行中：项目 3（真实数据遥感监测智能问答 Agent：真实法规文档 RAG + 真实 InSAR 数据 + SQLite）
-  - 素材已备：《地质灾害防治条例》全文 txt 已放入仓库（真实公开法规，gov.cn 来源）
-  - web_rag.py 知识库已换成条例（chunk_size=400，相对路径）✅ 待实测验收问题："地质灾害分为哪几个等级""国家实行什么预报制度"
-- 每日基础练习已启动：practice_day1（列表循环手算最值、if/elif 边界函数、字典查询）✅
+  - ✅ 第一步完成：web_rag.py 知识库已换成《地质灾害防治条例》，chunk_size=400，验收通过（四等级、预报制度两问全对）
+  - 踩坑记录：条例切块超过 10 块时，阿里云 embedding 报 batch size 限制 → OpenAIEmbeddings 加 chunk_size=10 分批解决
+  - 下一步：真实 InSAR 监测数据 + SQLite，把 Agent 工具从字典升级为数据库查询
+- 每日基础练习已启动：practice_day1（列表循环手算最值、if/elif 边界函数、字典查询）✅、practice_two_sum（两数之和字典优化）✅
 - 待学：Linux 基础、Docker、云服务器部署、Nginx（部署上线，9 月上旬）
 
 ## 环境
