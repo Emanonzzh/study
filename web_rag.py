@@ -18,19 +18,19 @@ def build_store():
         base_url=base_url,
         check_embedding_ctx_length=False,
     )
-    with open(r"f:\Python\gongc\py_day1\pythonProject3\知识库.txt", "r", encoding="utf-8") as f:
+    with open(r"地质灾害防治条例.txt", "r", encoding="utf-8") as f:
         text = f.read()
-    splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=20)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=20)
     chunks = splitter.split_text(text)
     return Chroma.from_texts(chunks, embeddings, collection_name="rs_kb_web")
 
 store = build_store()
 
 # ===== 网页界面（这些 st.xxx 就是网页上的组件）=====
-st.title("遥感知识库问答系统")
+st.title("地质灾害防治条例问答系统")
 st.write("基于 RAG 的遥感知识问答，输入问题试试")
 
-question = st.text_input("你的问题：", placeholder="例如：什么是 PS-InSAR？")
+question = st.text_input("你的问题：", placeholder="例如：地质灾害分为几个等级？")
 
 if st.button("提问") and question:
     # 检索 + 生成（和 Day15 完全一样）

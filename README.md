@@ -25,6 +25,7 @@ Python · LangChain · LangGraph · Chroma · FastAPI · Streamlit · 通义千�
 | `web_rag.py` | Streamlit 网页版 RAG 问答 |
 | `web_agent.py` | Streamlit 网页版多工具 Agent |
 | `知识库.txt` | RAG 使用的遥感知识文档 |
+| `地质灾害防治条例.txt` | 网页版 RAG 问答使用的真实法规文档（gov.cn 来源）|
 | `监测报告.txt` / `点位数据.json` | 遥感监测数据文件 |
 
 ## 快速开始
