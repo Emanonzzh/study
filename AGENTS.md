@@ -12,10 +12,12 @@
 - Day 14-15：FastAPI 封装 RAG 为 API ✅
 - Day 16-17：Streamlit 网页版（RAG + 多工具 Agent）✅
 - Day 18：Git/GitHub 上传项目 ✅
-- 进行中：项目 3（真实数据遥感监测智能问答 Agent：真实法规文档 RAG + 真实 InSAR 数据 + SQLite）
-  - ✅ 第一步完成：web_rag.py 知识库已换成《地质灾害防治条例》，chunk_size=400，验收通过（四等级、预报制度两问全对）
-  - 踩坑记录：条例切块超过 10 块时，阿里云 embedding 报 batch size 限制 → OpenAIEmbeddings 加 chunk_size=10 分批解决
-  - 下一步：真实 InSAR 监测数据 + SQLite，把 Agent 工具从字典升级为数据库查询
+- 进行中：项目 3（真实数据遥感监测智能问答 Agent）
+  - ✅ 第一步：真实法规 RAG（web_rag.py 知识库=《地质灾害防治条例》，chunk_size=400）
+  - ✅ 第二步：SQLite 数据库（day19_sqlite.py 建库，monitoring.db 存 3 条国家数据中心真实元数据）
+  - ✅ 第三步：day21.py 整合成品（一个 Agent 两工具：query_regulation 向量查条例 + query_dataset SQL 查数据集），验收全过
+  - 踩坑记录：① embedding 必带 chunk_size=10（阿里云每批最多10条，踩2次）② SQL LIKE 是连续子串匹配 ③ conn.close 必须在函数内 return 前
+  - 下一步：Docker 容器化 + 云服务器部署 + Nginx（部署上线）
 - 每日基础练习已启动：practice_day1（列表循环手算最值、if/elif 边界函数、字典查询）✅、practice_two_sum（两数之和字典优化）✅
 - 待学：Linux 基础、Docker、云服务器部署、Nginx（部署上线，9 月上旬）
 
