@@ -3,7 +3,7 @@ from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 import sqlite3
 
-api_key = "sk-ws-H.EPLDLHY.kaZf.MEUCIHUm-mb5AF5iOHhEAwLLGp8-A7Y3ydeMpNr8Lkru0bSJAiEAkhZC6g1JJp1yROmRv2fMQu4_YixeupynspA-vyDozc0"
+api_key = "YOUR_DASHSCOPE_API_KEY"
 base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 llm = ChatOpenAI(model="qwen-plus", api_key=api_key, base_url=base_url)
