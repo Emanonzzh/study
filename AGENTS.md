@@ -16,7 +16,7 @@
   - ✅ 第一步：真实法规 RAG（web_rag.py 知识库=《地质灾害防治条例》，chunk_size=400）
   - ✅ 第二步：SQLite 数据库（day19_sqlite.py 建库，monitoring.db 存 3 条国家数据中心真实元数据）
   - ✅ 第三步：day21.py 整合成品（一个 Agent 两工具：query_regulation 向量查条例 + query_dataset SQL 查数据集），验收全过
-  - 踩坑记录：① embedding 必带 chunk_size=10（阿里云每批最多10条，踩2次）② SQL LIKE 是连续子串匹配 ③ conn.close 必须在函数内 return 前
+  - 踩坑记录：① embedding 必带 chunk_size=10（阿里云每批最多10条，踩2次）② SQL LIKE 是连续子串匹配 ③ conn.close 必须在函数内 return 前 ④ 真实 API key 千万别硬编码 push 到 GitHub（day20.py 泄漏过一次，已吊销重发；代码里永远只留 YOUR_DASHSCOPE_API_KEY 占位符）
   - 下一步：Docker 容器化 + 云服务器部署 + Nginx（部署上线）
 - 每日基础练习已启动：practice_day1（列表循环手算最值、if/elif 边界函数、字典查询）✅、practice_two_sum（两数之和字典优化）✅
 - 待学：Linux 基础、Docker、云服务器部署、Nginx（部署上线，9 月上旬）
