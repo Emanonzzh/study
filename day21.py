@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from langchain_core.tools import tool
 from langchain.agents import create_agent
@@ -7,7 +8,7 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
-api_key = "YOUR_DASHSCOPE_API_KEY"
+api_key = os.getenv("DASHSCOPE_API_KEY", "YOUR_DASHSCOPE_API_KEY")
 base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 llm = ChatOpenAI(model="qwen-plus", api_key=api_key, base_url=base_url)
@@ -50,7 +51,9 @@ def query_dataset(keyword:str) -> str:
     (f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"),
 )
     rows = cursor.fetchall()
-    if not rows: return "未找到相关数据集"
+    if not rows:
+        conn.close()
+        return "未找到相关数据集"
     line = []
     for row in rows:
         line.append(

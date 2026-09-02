@@ -1,10 +1,11 @@
 # Day 16：Streamlit —— 把 RAG 变成网页
+import os
 import streamlit as st
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
-api_key = "YOUR_DASHSCOPE_API_KEY"
+api_key = os.getenv("DASHSCOPE_API_KEY", "YOUR_DASHSCOPE_API_KEY")
 base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 llm = ChatOpenAI(model="qwen-plus", api_key=api_key, base_url=base_url)
@@ -21,7 +22,7 @@ def build_store():
     )
     with open(r"地质灾害防治条例.txt", "r", encoding="utf-8") as f:
         text = f.read()
-    splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=20)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=20)
     chunks = splitter.split_text(text)
     return Chroma.from_texts(chunks, embeddings, collection_name="rs_kb_web")
 
