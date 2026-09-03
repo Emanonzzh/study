@@ -12,14 +12,19 @@
 - Day 14-15：FastAPI 封装 RAG 为 API ✅
 - Day 16-17：Streamlit 网页版（RAG + 多工具 Agent）✅
 - Day 18：Git/GitHub 上传项目 ✅
-- 进行中：项目 3（真实数据遥感监测智能问答 Agent）
-  - ✅ 第一步：真实法规 RAG（web_rag.py 知识库=《地质灾害防治条例》，chunk_size 统一 100）
-  - ✅ 第二步：SQLite 数据库（day19_sqlite.py 建库，monitoring.db 存 3 条国家数据中心真实元数据）
-  - ✅ 第三步：day21.py 整合成品（一个 Agent 两工具：query_regulation 向量查条例 + query_dataset SQL 查数据集），验收全过
-  - 踩坑记录：① embedding 必带 chunk_size=10（阿里云每批最多10条，踩2次）② SQL LIKE 是连续子串匹配 ③ conn.close 必须在函数内 return 前 ④ 真实 API key 千万别硬编码 push 到 GitHub（day20.py 泄漏过一次，已吊销重发；代码里永远只留 YOUR_DASHSCOPE_API_KEY 占位符）
-  - 下一步：Docker 容器化 + 云服务器部署 + Nginx（部署上线）
-- 每日基础练习已启动：practice_day1（列表循环手算最值、if/elif 边界函数、字典查询）✅、practice_two_sum（两数之和字典优化）✅
-  - 待学：Linux 基础（在 Ubuntu 那台电脑学，本机 Windows 不装 WSL；学习笔记见 Linux学习笔记.md）、Docker、云服务器部署、Nginx（部署上线，9 月上旬）
+- ✅ 项目 3 完整完成（真实数据遥感监测智能问答 Agent）
+  - 第一步：真实法规 RAG（知识库=《地质灾害防治条例》）
+  - 第二步：SQLite 数据库（monitoring.db 存 3 条国家数据中心真实元数据）
+  - 第三步：day21.py 整合成品（一个 Agent 两工具：query_regulation 向量查条例 + query_dataset SQL 查数据集）
+  - 踩坑记录：① embedding 必带 chunk_size=10（阿里云每批最多10条）② SQL LIKE 是连续子串匹配 ③ conn.close 必须在函数内 return 前 ④ 真实 API key 禁止硬编码 push（泄漏过一次，已吊销；代码用环境变量 DASHSCOPE_API_KEY）
+- ✅ 部署上线：Docker 容器化部署于阿里云 ECS（Ubuntu 22.04，公网 IP 47.76.101.97），Streamlit 服务跑在 8501 端口，**公网可访问：http://47.76.101.97:8501**
+  - 服务器操作：SSH 登录（root 用户）、git clone 拉项目、docker build/run、安全组已开 22 和 8501
+  - Linux 基础已学：核心命令/权限/文件系统（见 Linux学习笔记.md）
+- ⏭️ 下一阶段（2026-09 秋招冲刺）：
+  1. **项目反刍**：关掉所有资料，从空白文件重搭 day21 骨架（练独立开发能力，允许查资料）
+  2. 写简历（1 主打项目 + 2 支撑项目 + GitHub + 公网地址）
+  3. 投递 AI 应用开发 / 大模型应用 / AI Agent 岗
+- 每日基础练习：practice_day1（列表循环/if边界/字典查询）✅、practice_two_sum ✅（持续进行）
 
 ## 环境
 - Python：用完整路径运行（每台电脑路径不同，以 `python --version` 验证）
