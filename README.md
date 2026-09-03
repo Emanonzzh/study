@@ -2,6 +2,8 @@
 
 基于 RAG + Agent 的遥感地质灾害智能问答系统，支持自然语言查询地面沉降、滑坡预警、矿山形变等监测数据。
 
+> **线上地址**：http://47.76.101.97:8501 （Docker 部署于阿里云 ECS，Ubuntu 22.04）
+
 ## 功能
 
 - **RAG 知识库问答**：基于 LangChain + Chroma，对遥感知识文档实现检索增强生成
@@ -61,3 +63,10 @@ python api_rag.py
 ## 作者
 
 遥感科学与技术背景，AI 应用开发方向求职者。目标岗位：AI 应用开发工程师。
+
+## Docker 部署
+
+```bash
+docker build -t rs-assistant .
+docker run -d -p 8501:8501 -e DASHSCOPE_API_KEY=你的密钥 --name rs-app rs-assistant
+```
