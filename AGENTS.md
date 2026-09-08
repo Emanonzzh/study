@@ -21,9 +21,13 @@
   - 服务器操作：SSH 登录（root 用户）、git clone 拉项目、docker build/run、安全组已开 22 和 8501
   - Linux 基础已学：核心命令/权限/文件系统（见 Linux学习笔记.md）
 - ⏭️ 下一阶段（2026-09 秋招冲刺）：
-  1. **项目反刍**：关掉所有资料，从空白文件重搭 day21 骨架（练独立开发能力，允许查资料）
-  2. 写简历（1 主打项目 + 2 支撑项目 + GitHub + 公网地址）
-  3. 投递 AI 应用开发 / 大模型应用 / AI Agent 岗
+  1. ✅ **项目反刍完成**（2026-09-04，day21remake.py 从空白重搭，3 轮 bug 修复 + 全文逐行讲解，教学要点：独立 if 打分 vs if/elif 分级）
+  2. ⏳ **V2 阶段 A 进行中**：
+     - A1 ✅ day22_seed_data.py（monitoring_series 表 + 18 条川西示范区示例数据，幂等验证过；UPDATE 练习做完后已把练习代码从脚本删除并复位数据）
+     - A2 ✅ day23_risk.py risk_assessment 完成（规则打分：速率+40/加速+30/异常+30；分级 ≤30低/≤60中/>60较高；验收 100 分三项全中，空数据返回"数据不足"）。剩余：A3 集成进 day21（@tool+docstring+create_agent 三工具）→ A4 免责声明 → A5 验收
+     - 今日新踩坑：脚本必须先 cd 到仓库目录再跑（monitoring.db 曾被建进 F:\VScode 目录）；AUTOINCREMENT 永不复用 ID，删了重插 ID 会跳；UPDATE 定位要用业务字段（date）而非 id；cursor.rowcount 检查影响行数防静默失败
+  3. 写简历（1 主打项目 + 2 支撑项目 + GitHub + 公网地址）
+  4. 投递 AI 应用开发 / 大模型应用 / AI Agent 岗
 - 每日基础练习：practice_day1（列表循环/if边界/字典查询）✅、practice_two_sum ✅（持续进行）
 
 ## 环境
