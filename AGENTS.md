@@ -24,7 +24,7 @@
   1. ✅ **项目反刍完成**（2026-09-04，day21remake.py 从空白重搭，3 轮 bug 修复 + 全文逐行讲解，教学要点：独立 if 打分 vs if/elif 分级）
   2. ⏳ **V2 阶段 A 进行中**：
      - A1 ✅ day22_seed_data.py（monitoring_series 表 + 18 条川西示范区示例数据，幂等验证过；UPDATE 练习做完后已把练习代码从脚本删除并复位数据）
-     - A2 进行中：day23_risk.py **六个指标公式全对**；待修 3 处：① deforms 提取写成 rows.append（应为循环 append row[0]）② 三个打分 if 顶格掉了函数外（NameError）③ 缺分级 if/elif/else + return 拼串 + 末尾两个测试调用
+     - A2 ✅ day23_risk.py risk_assessment 完成（规则打分：速率+40/加速+30/异常+30；分级 ≤30低/≤60中/>60较高；验收 100 分三项全中，空数据返回"数据不足"）。剩余：A3 集成进 day21（@tool+docstring+create_agent 三工具）→ A4 免责声明 → A5 验收
      - 今日新踩坑：脚本必须先 cd 到仓库目录再跑（monitoring.db 曾被建进 F:\VScode 目录）；AUTOINCREMENT 永不复用 ID，删了重插 ID 会跳；UPDATE 定位要用业务字段（date）而非 id；cursor.rowcount 检查影响行数防静默失败
   3. 写简历（1 主打项目 + 2 支撑项目 + GitHub + 公网地址）
   4. 投递 AI 应用开发 / 大模型应用 / AI Agent 岗
