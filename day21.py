@@ -65,7 +65,12 @@ def query_dataset(keyword:str) -> str:
 
 @tool
 def risk_assessment(region:str) -> str:
-    """计算地区风险评分。keyword 是关键词，例如"川西示范区"。"""
+    """计算指定区域的形变风险评分与风险等级（例如"川西示范区"）。
+
+    仅在用户询问某区域的形变风险时调用，例如"川西示范区风险怎么样""XX区域处于什么风险等级""需不需要防范"。
+    不要用于：① 概念/原理解释（如"什么是InSAR、PS-InSAR、SBAS-InSAR"）；② 数据集查询（如"有哪些监测数据集"，
+    请用 query_dataset）；③ 法规条款问答（请用 query_regulation）。
+    参数 region：区域名称，如"川西示范区"。"""
     try:
         conn = sqlite3.connect("monitoring.db")
         cursor = conn.cursor()
