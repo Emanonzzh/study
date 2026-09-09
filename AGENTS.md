@@ -30,6 +30,13 @@
   4. 投递 AI 应用开发 / 大模型应用 / AI Agent 岗
 - 每日基础练习：practice_day1（列表循环/if边界/字典查询）✅、practice_two_sum ✅（持续进行）
 
+## 面试扫盲资料（已入库）
+- `面试题库_AI_Interview/`：GitHub 开源题库（kingaimaster/AI_Interview，200+ 题，已拷入仓库）
+- **只学 4 个目录**：`0.AI应用开发工程师`、`1.Python`、`5.Agent`（LangChain/LangGraph/MCP）、`8.HR初筛`
+- **跳过**：PyTorch/Transformer/多模态（校招 AI 应用岗考得浅，秋招后再说）
+- 用法：每天 15 分钟扫 1-2 题，只读"参考口语化回答"，结合自己的 day21 项目举一反三
+- 高频必考补充：MCP vs Function Calling 区别（FC=模型侧调用机制，MCP=应用侧工具接入协议/治理层；见 `5.Agent/MCP/A.md` Q2）
+
 ## 环境
 - Python：用完整路径运行（每台电脑路径不同，以 `python --version` 验证）
 - 已装库：openai、chromadb、langchain、langchain-openai、langchain-chroma、langchain-text-splitters、langgraph、fastapi、uvicorn、streamlit
