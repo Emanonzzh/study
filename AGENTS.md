@@ -24,7 +24,10 @@
   1. ✅ **项目反刍完成**（2026-09-04，day21remake.py 从空白重搭，3 轮 bug 修复 + 全文逐行讲解，教学要点：独立 if 打分 vs if/elif 分级）
   2. ⏳ **V2 阶段 A 进行中**：
      - A1 ✅ day22_seed_data.py（monitoring_series 表 + 18 条川西示范区示例数据，幂等验证过；UPDATE 练习做完后已把练习代码从脚本删除并复位数据）
-     - A2 ✅ day23_risk.py risk_assessment 完成（规则打分：速率+40/加速+30/异常+30；分级 ≤30低/≤60中/>60较高；验收 100 分三项全中，空数据返回"数据不足"）。剩余：A3 集成进 day21（@tool+docstring+create_agent 三工具）→ A4 免责声明 → A5 验收
+     - A2 ✅ day23_risk.py risk_assessment 完成（规则打分：速率+40/加速+30/异常+30；分级 ≤30低/≤60中/>60较高；验收 100 分三项全中，空数据返回"数据不足"）
+     - A3 ✅ risk_assessment 已集成进 day21.py（@tool+docstring+create_agent 三工具），验收三问全过：法规等级→query_regulation、青藏数据集→query_dataset、川西风险→risk_assessment(100分/较高风险)
+     - A4 ✅ 结构化报告+免责声明已生效（prompt 注入 user_message，分节输出+末尾免责声明）
+     - ⚠️ 待办：① risk_assessment docstring 边界模糊导致概念题误调用（问"什么是SBAS-InSAR"被调了风险评估），需改成"用户询问某区域形变风险等级时调用，不要用于数据集查询或概念解释" ② 青藏数据集回答中出现元数据里没有的速率数字=幻觉案例，已存档当面试素材 ③ 服务器重新部署（docker）未做
      - 今日新踩坑：脚本必须先 cd 到仓库目录再跑（monitoring.db 曾被建进 F:\VScode 目录）；AUTOINCREMENT 永不复用 ID，删了重插 ID 会跳；UPDATE 定位要用业务字段（date）而非 id；cursor.rowcount 检查影响行数防静默失败
   3. 写简历（1 主打项目 + 2 支撑项目 + GitHub + 公网地址）
   4. 投递 AI 应用开发 / 大模型应用 / AI Agent 岗

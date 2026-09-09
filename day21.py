@@ -2,7 +2,6 @@ import os
 import streamlit as st
 from langchain_core.tools import tool
 from langchain.agents import create_agent
-from langchain_openai import ChatOpenAI
 import sqlite3
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -64,16 +63,70 @@ def query_dataset(keyword:str) -> str:
     conn.close()                     # 再关连接（在函数里面！）
     return result_text  
 
-agent = create_agent(llm, [query_regulation, query_dataset])
+@tool
+def risk_assessment(region:str) -> str:
+    """计算地区风险评分。keyword 是关键词，例如"川西示范区"。"""
+    try:
+        conn = sqlite3.connect("monitoring.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT deformation_mm FROM monitoring_series WHERE region = ? ORDER BY date",
+            (region,),
+        )
+        rows = cursor.fetchall()
+        conn.close()
+    except Exception as e:
+        return f"查询出错:{e}"
+    deforms = []
+    for row in rows:
+        deforms.append(row[0])
+
+    if len(deforms) < 4 :
+        return"数据不足"
+
+    recent_rate = (deforms[-1] - deforms[-4]) / 3
+    mid = len(deforms) // 2 
+    first_rate = (deforms[mid] - deforms[0]) / mid
+    second_rate = (deforms[-1] - deforms[mid]) / (len(deforms) - 1 - mid)
+    last_step = deforms[-1] - deforms[-2]
+    avg_step = (deforms[-1] - deforms[0]) / (len(deforms) - 1)
+
+    score = 0
+    if recent_rate > 10:
+        score += 40
+    if second_rate > first_rate:
+        score += 30
+    if last_step > avg_step * 3:
+        score += 30
+
+    if score <= 30:
+        level = "低风险"
+    elif score <= 60:
+        level = "中风险"
+    else:
+        level = "较高风险"
+    return (
+    f"风险评分：{score} 分，等级：{level}。"
+    f"指标明细：近3期平均月增量 {recent_rate:.1f}mm（阈值10），"
+    f"前半段 {first_rate:.1f} vs 后半段 {second_rate:.1f} mm/期，"
+    f"最近一期增量 {last_step:.1f}mm vs 历史平均 {avg_step:.1f}mm。")
+
+
+
+agent = create_agent(llm, [query_regulation, query_dataset, risk_assessment])
 
 st.title("遥感地质灾害智能助手")
-st.write("法规问答 + 数据集查询")
+st.write("法规问答 + 数据集查询 + 形变风险分析")
 
 with st.form("qa_form"):
     question = st.text_input("你的问题：", placeholder="例如：地质灾害分为哪几个等级？")
     submitted = st.form_submit_button("提问")
 
 if submitted and question:
-    result = agent.invoke({"messages": [("user", question)]})
+    user_message = (
+        f"{question}\n\n"
+        "回答要求： 1.设计风险分析时，按'数据概况/形变分析/风险等级/结论'分节输出；"
+        "2.末尾必须带：本系统结果仅基于公开数据辅助分析，不构成专业灾害预测或官方预警。"
+    )
+    result = agent.invoke({"messages": [("user", user_message)]})
     st.markdown("### 回答")
     st.write(result["messages"][-1].content)
