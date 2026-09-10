@@ -52,7 +52,16 @@
      - A2 ✅ day23_risk.py risk_assessment 完成（规则打分：速率+40/加速+30/异常+30；分级 ≤30低/≤60中/>60较高；验收 100 分三项全中，空数据返回"数据不足"）
      - A3 ✅ risk_assessment 已集成进 day21.py（@tool+docstring+create_agent 三工具），验收三问全过：法规等级→query_regulation、青藏数据集→query_dataset、川西风险→risk_assessment(100分/较高风险)
      - A4 ✅ 结构化报告+免责声明已生效（prompt 注入 user_message，分节输出+末尾免责声明）
-     - ⚠️ 待办：① risk_assessment docstring 边界模糊导致概念题误调用（问"什么是SBAS-InSAR"被调了风险评估），需改成"用户询问某区域形变风险等级时调用，不要用于数据集查询或概念解释" ② 青藏数据集回答中出现元数据里没有的速率数字=幻觉案例，已存档当面试素材 ③ 服务器重新部署（docker）未做
+      - ⚠️ 待办：① risk_assessment docstring 边界模糊导致概念题误调用（问"什么是SBAS-InSAR"被调了风险评估），需改成"用户询问某区域形变风险等级时调用，不要用于数据集查询或概念解释" ② 青藏数据集回答中出现元数据里没有的速率数字=幻觉案例，已存档当面试素材 ③ 服务器重新部署（docker）未做
+   3. ⏭️ **V2 阶段 C（RAG 评估）**（2026-09-10 完成）：
+      - C1 ✅ rag_eval_questions.py：12 题测试集（问题+期望命中关键词），全部校验：关键词在原文出现≥1次且有辨识度（修正"发展趋向预测→发展趋势预测"、"危险性评估"22次无区分度改选"可行性研究阶段"）
+      - C2 ✅ rag_eval.py：评估脚本（建库→检索→关键词命中判断→计数）
+      - C3 ✅ 四组实验：chunk_size∈{100,400}×k∈{2,4}，结果 10/12、11/12、10/12、**12/12**，最优 400+4（100 命中率 83%）
+      - 结论（面试可讲版）：小切片造成语义碎片，适度加大切片+提高 k 显著提升命中率；但 k 越大 token 越贵、噪音越多，k 是"最小够用"权衡，评测价值=用数据找最小够用参数
+      - C4 ✅ 最优参数已落地 day21.py（400/k=4），验证通过；⚠️ 注意：splitter 的 chunk_size 与 embedding 的 chunk_size=10 是两回事（后者是每批条数）
+      - 实验中学习者踩坑：build_store 参数未接收（TypeError）、f-string 变量写在引号外（SyntaxError）、`if hits in material` 选错变量、没导入 st 却用装饰器、F:\Python3.14 反复误用——全部独立修复或当场纠正
+   4. 写简历（1 主打项目 + 2 支撑项目 + GitHub + 公网地址）；**C 完成可加一句："构建法规问答测试集，对比切片策略与检索参数（chunk_size/k 四组实验），检索命中率 83%→100%"**
+   5. 投递 AI 应用开发 / 大模型应用 / AI Agent 岗
      - 今日新踩坑：脚本必须先 cd 到仓库目录再跑（monitoring.db 曾被建进 F:\VScode 目录）；AUTOINCREMENT 永不复用 ID，删了重插 ID 会跳；UPDATE 定位要用业务字段（date）而非 id；cursor.rowcount 检查影响行数防静默失败
   3. 写简历（1 主打项目 + 2 支撑项目 + GitHub + 公网地址）
   4. 投递 AI 应用开发 / 大模型应用 / AI Agent 岗

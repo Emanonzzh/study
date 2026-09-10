@@ -23,7 +23,7 @@ def build_store():
     )
     with open("地质灾害防治条例.txt", "r", encoding="utf-8") as f:
         text = f.read()
-    splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=20)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=20)
     chunks = splitter.split_text(text)
     return Chroma.from_texts(chunks, embeddings, collection_name="rs_kb_web")
 
@@ -32,7 +32,7 @@ store = build_store()
 @tool
 def query_regulation(keyword: str) -> str:
     """查询《地质灾害防治条例》条款。keyword 是问题关键词，如"地质灾害等级"、"预报制度"。"""
-    docs = store.similarity_search(keyword, k=2)
+    docs = store.similarity_search(keyword, k=4)
     if not docs:
         return"条例中未找到相关内容"
     lines = []
