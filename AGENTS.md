@@ -23,6 +23,7 @@
 - **目标岗位改为两个**：① **Agent 开发工程师（初级/社招往届）** ② **AI 运维 / AI 应用部署运维（初级）**；遥感/GIS 内业降为**兜底**
 - 身份：26 届已毕业 → 社招/往届通道；目标城市深圳（简历另有"广东东莞"住址说法，待本人统一）
 - **不新开项目**：把现有项目升级成工程化项目（CRUD + 日志留痕 + health + docker compose + GitHub Actions + 监控 + pytest），同时喂饱两个岗位
+- **本机另有第二个项目 `F:\dsh_gongc\sale`**（烟草零售/批发定价与毛利监控；engine/io/tools 分层、纯标准库含手写 XLSX 解析、55 项自检、6 个"静默算错"bug）——**尚未进 git**；计划第 5–6 周补 pytest + 上 GitHub + CI，注意**真实进价/客户数据不得上传**，只提交代码与 demo 数据
 - 6 周计划（每天 2h：手写 30min / 主线 60min / 读代码 20min / 笔记 10min）：
   本机 `WORK\开发转型计划_Agent开发与AI运维_6周.md`
 - **硬短板优先级**：① 手写 Python（面试手写不过=淘汰） ② CRUD/后端 ③ code review ④ 运维（Docker compose/CI-CD/监控）
