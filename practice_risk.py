@@ -6,7 +6,6 @@ def recent_average(deforms, n):
     for v in recent:
         total += v
     return total / n
-
 deforms = [3.2, 5.1, 8.4, 12.0, 18.6, 27.5]
 print(recent_average(deforms, 3))
 
