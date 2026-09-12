@@ -78,7 +78,49 @@ conn.close()                              # 6. 关闭
 
 ---
 
-## 四、为什么必须用 `?`（而不是拼字符串）
+## 四、完整示例：一次搞定增 / 改 / 删（复制可跑）
+
+```python
+import sqlite3
+
+conn = sqlite3.connect(r"F:\Python\gongc\rs-ai-assistant\monitoring.db")
+cursor = conn.cursor()
+
+# ① 增：6 个 ? 就要对应 6 个值的元组
+data = ("测试数据集", "测试区域", "SBAS-InSAR", "2020-2024", "±5mm", "测试来源")
+cursor.execute(
+    "INSERT INTO datasets (name, region, method, period, accuracy, source) VALUES (?,?,?,?,?,?)",
+    data,
+)
+conn.commit()
+print("新增后 id =", cursor.lastrowid)
+
+# ② 查：确认刚插进去的
+cursor.execute("SELECT * FROM datasets WHERE name LIKE ?", ("%测试%",))
+print("查到：", cursor.fetchall())
+
+# ③ 改：用 id 定位（不要用 name，可能重名）
+cursor.execute("UPDATE datasets SET accuracy = ? WHERE id = ?", ("±10mm", cursor.lastrowid))
+conn.commit()
+print("影响行数 =", cursor.rowcount)          # 检查是否真的改到了
+
+# ④ 删：同样用 id 定位
+cursor.execute("DELETE FROM datasets WHERE id = ?", (cursor.lastrowid,))
+conn.commit()
+print("删除后还能查到吗：", cursor.fetchall())
+
+conn.close()
+```
+
+**易错点**
+- `?` 的个数必须等于元组元素个数，否则报 `Incorrect number of bindings supplied`
+- 单个值的元组要写逗号：`(值,)`
+- 增/改/删必须 `conn.commit()`，否则不落库
+- 改/删**用 `id` 定位**，并看 `cursor.rowcount` 确认影响行数（防静默失败）
+
+---
+
+## 五、为什么必须用 `?`（而不是拼字符串）
 
 ```python
 # ❌ 危险写法：字符串拼接
@@ -95,7 +137,7 @@ cursor.execute("SELECT * FROM datasets WHERE region = ?", (region,))
 
 ---
 
-## 五、练习题（在 monitoring.db 上做，不许照抄上面的示例）
+## 六、练习题（在 monitoring.db 上做，不许照抄上面的示例）
 
 写一个 `practice_sql.py`，依次完成：
 
@@ -112,7 +154,7 @@ cursor.execute("SELECT * FROM datasets WHERE region = ?", (region,))
 
 ---
 
-## 六、常见坑（新手必踩）
+## 七、常见坑（新手必踩）
 
 | 坑 | 现象 | 正确做法 |
 |---|---|---|
