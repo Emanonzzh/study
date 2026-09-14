@@ -269,3 +269,56 @@ python eval\run_sql_eval.py --execute                   # Text-to-SQL 评估（�
 | 上下文/会话怎么管？ | 最近 6 轮 + thread_id 隔离 + TTL 30 分钟；Redis 挂了降级内存（上限 1000） |
 | 部署架构？ | Nginx 统一入口 + 3 应用 + MySQL + Redis，仅暴露 80；`docker-compose.yml` |
 | 数据同步怎么保证一致？ | `sync_orders.py`：CSV SHA-256 校验 → 临时表 → 校验行数 → 原子换表 |
+
+---
+
+## 七、本机复现记录（2026-09-14）
+
+### 环境体检
+| 项 | 结果 |
+|---|---|
+| git | 2.54.0 ✅ |
+| Python | 默认 3.14，但 **3.12 已安装**（用 `py -3.12`）✅ |
+| **Docker** | ❌ **未安装** |
+| 磁盘 F: | 267 GB 可用 ✅ |
+
+### 无 Docker 跑通方案（关键）
+`app.py` 里 `USE_MYSQL = bool(DB_USER and DB_PASSWORD)` → **不配 DB_USER/DB_PASSWORD 就自动回落 SQLite 演示库**。
+
+| 步骤 | 实际执行 |
+|---|---|
+| 1. 生成 SQLite 库 | 写了 `build_sqlite_demo.py`（**纯标准库**，不用 pandas）：`py -3.12 build_sqlite_demo.py` → `ai-ecommerce-assistant/ecommerce.db`，**102,287 行，2.0 秒**（含 7 个索引） |
+| 2. 根目录 `.env` | `_PROJECT_ROOT` = 仓库根目录 → `.env` 放根目录；**故意不设 DB_USER/DB_PASSWORD**；`REDIS_ENABLED=false` |
+| 3. 虚拟环境 | `py -3.12 -m venv .venv` + `pip install -r ai-ecommerce-assistant/requirements.txt` |
+| 4. 依赖版本 | langchain 1.3.10 / langgraph 1.2.11 / chromadb 1.5.9 / sqlglot 30.17.0 / **torch 2.13.0+cpu** / sentence-transformers 5.6.0 |
+| 5. 构建 RAG 知识库 | `HF_ENDPOINT=https://hf-mirror.com` + `build_knowledge_base.py --rebuild` → 6 份文档 → **60 chunks** → chroma 集合 `business_knowledge`（60 向量，0.8MB，38s） |
+| 6. 离线评测 | `python -m agent_core.evaluation` → **路由 100/100**（多数类基线 52）、**Recall@3 100% / MRR 0.7444**，与 README 声称一致 ✅ |
+| 7. 启动应用 | AI 助手 `:8505`、BI 看板 `:8501`，两者 `_stcore/health` 均 **HTTP 200** |
+
+### 两个应用的数据来源（重要）
+| 应用 | 数据来源 | 是否需要 MySQL |
+|---|---|---|
+| AI 助手（`ai-ecommerce-assistant/app.py`） | SQLite 回落（`ecommerce.db`） | ❌ 不需要 |
+| BI 看板（`streamlit_app.py`） | **直接 `pd.read_csv`**（中文表头 CSV） | ❌ 不需要 |
+| FastAPI 后端（`backend/`） | **硬编码 `mysql+pymysql`** | ✅ **需要 MySQL** |
+
+### 尚未跑通的部分与选项
+- FastAPI 后端（:8000 / Swagger / 32 接口 / RFM / 监控）需要 MySQL：
+  - 选项 A：装 **Docker Desktop** → `docker compose up -d --build` 一键全栈（推荐）
+  - 选项 B：`winget install MySQL.MySQL` 装 MySQL 8，用 `sql/01_create_table.sql` + `02_import_data.sql` 建表导入
+  - 选项 C：先不动后端（第 2 周补，因为 FastAPI 是 JD 高频项）
+- `.env` 里的 `LLM_API_KEY` 仍是占位符 → **填 DeepSeek Key 后重启 AI 助手**才能用 Text-to-SQL；不填时知识类问题仍可用（RAG 照常返回来源）
+
+### 复现中的第一个"真实发现"（可当你自己的改动 #1）
+`knowledge_base/data_dictionary.md` 说 `platform_type` 只有 4 个枚举值（`APP` / `微信公众号` / `Web网站` / `其他`），但**真实数据里有 6 个**：
+
+| 实际值 | 订单数 | 销售额 |
+|---|---|---|
+| 微信公众号 | 42,032 | 47,100,892.19 |
+| APP | 51,294 | 46,041,870.47 |
+| web网站（小写 w，与字典的 `Web网站` 不一致） | 6,898 | 6,699,451.08 |
+| 淘宝 | 1,973 | 1,823,308.43 |
+| 微信小店 | 87 | 88,521.17 |
+| wap网站 | 3 | 1,775.64 |
+
+→ **数据字典与实际数据不一致**（还多了 3 个值 + 大小写差异）。这既是"数据质量问题"的真实案例，也是你**改动的第一项**：修正字典 + 让路由/枚举做兼容（这正好是"数据质量 + 异常处理"的面试素材）。
