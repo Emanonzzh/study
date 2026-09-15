@@ -44,9 +44,6 @@ print("删除行数 =", cursor.rowcount)          # 这次应该是 6（4,5,6,7,
 print("剩余测试数据 =", cursor.execute("SELECT COUNT(*) FROM datasets WHERE name LIKE ?", ("%测试%",)).fetchone()[0])   # 0
 print("datasets 总行数 =", cursor.execute("SELECT COUNT(*) FROM datasets").fetchone()[0])                              # 3
 
-conn.close()          # ← close 永远放最后！
-
-
 conn.close()
 
 
