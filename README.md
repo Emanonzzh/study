@@ -8,6 +8,25 @@
 
 ---
 
+## 📁 仓库结构导览（哪部分是我的作品）
+
+| 位置 | 内容 | 性质 |
+|---|---|---|
+| **`agent_lab/`** | 销售经营分析 Agent：工具层 / 异常检测 / 评测 / 报告对账 / FastAPI / Streamlit 看板 | ⭐ **项目一（作品）** |
+| **`day21.py`** `day22_seed_data.py` `day23_risk.py` `api_rag.py` `Dockerfile` `deploy.sh` | 遥感监测智能助手：三工具 Agent + 一键部署 | ⭐ **项目二（作品）** |
+| `rag_eval.py` `rag_eval_questions.py` | 遥感项目的检索评测（12 题 × 4 组参数对比） | ⭐ 评测证据 |
+| `learning/` | 手写练习与学习过程稿（两数之和、手写 Function Calling、手写 RAG…） | 📚 学习痕迹，**非成品** |
+| `docs/` | 学习路径、项目口述稿、求职材料、低配机学习指南 | 📄 文档 |
+| `monitoring.db` `知识库.txt` `地质灾害防治条例.txt` `点位数据.json` `监测报告.txt` | 数据与知识库素材 | 🗂 数据 |
+
+> **想快速看代码** → `agent_lab/代码导读.md`
+> **想看踩过哪些坑** → `docs/求职/项目二_Agent学习日志.md`
+> **想看评测怎么做的** → `agent_lab/eval/anomaly_report.md`
+
+---
+
+---
+
 # 项目一：销售经营分析 Agent（真实电商数据 · 独立开发）
 
 > 在开源企业级项目（FastAPI + MySQL + Redis + Nginx + LangGraph）基础上做**增量演进**，
