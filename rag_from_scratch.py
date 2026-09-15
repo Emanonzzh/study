@@ -1,7 +1,12 @@
+import os
+import sys
+
 import chromadb
 from openai import OpenAI
 
-api_key = "YOUR_DASHSCOPE_API_KEY"
+api_key = os.getenv("DASHSCOPE_API_KEY")
+if not api_key:
+    sys.exit("缺少环境变量 DASHSCOPE_API_KEY：请先执行 setx 或 $env:DASHSCOPE_API_KEY=xxx 再运行")
 client = OpenAI(api_key=api_key, base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
 
 def embed(text):
@@ -12,7 +17,10 @@ def chunk(text):
     return text.split("\n\n")
     
 
-with open("f:\Python\gongc\py_day1\pythonProject3\知识库.txt", "r", encoding="utf-8") as f:
+KB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "知识库.txt")
+if not os.path.exists(KB_PATH):
+    sys.exit(f"找不到知识库文件：{KB_PATH}")
+with open(KB_PATH, "r", encoding="utf-8") as f:
     text = f.read()
 chunks = chunk(text)
 print(f"切成{len(chunks)}块")

@@ -1,8 +1,10 @@
 # Day 11：用 LangChain 重做 RAG（代码量：60 行 → 25 行）
-import sys
+import os, sys
 sys.stdout.reconfigure(encoding="utf-8")   # 防止中文输出 GBK 报错
 
-api_key = "YOUR_DASHSCOPE_API_KEY"
+api_key = os.getenv("DASHSCOPE_API_KEY")
+if not api_key:
+    sys.exit("缺少环境变量 DASHSCOPE_API_KEY：请先执行 setx 或 $env:DASHSCOPE_API_KEY=xxx 再运行")
 base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 def build_store():
@@ -14,7 +16,10 @@ def build_store():
         check_embedding_ctx_length=False,   # 关键坑！阿里云只认原始字符串，见下面讲解
     )
     from langchain_text_splitters import RecursiveCharacterTextSplitter
-    with open(r"F:\python\gongc\py_day1\pythonProject3\知识库.txt", "r", encoding="utf-8") as f:
+    kb_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "知识库.txt")
+    if not os.path.exists(kb_path):
+        sys.exit(f"找不到知识库文件：{kb_path}")
+    with open(kb_path, "r", encoding="utf-8") as f:
         text = f.read()
     splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=20)
     chunks = splitter.split_text(text)

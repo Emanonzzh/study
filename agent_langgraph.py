@@ -1,12 +1,14 @@
 # Day 13：用 LangGraph 一行搞定 Agent（75 行 → 30 行）
-import sys
+import os, sys
 sys.stdout.reconfigure(encoding="utf-8")
 
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langchain.agents import create_agent
 
-api_key = "YOUR_DASHSCOPE_API_KEY"
+api_key = os.getenv("DASHSCOPE_API_KEY")
+if not api_key:
+    sys.exit("缺少环境变量 DASHSCOPE_API_KEY：请先执行 setx 或 $env:DASHSCOPE_API_KEY=xxx 再运行")
 base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 llm = ChatOpenAI(model="qwen-plus", api_key=api_key, base_url=base_url)

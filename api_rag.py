@@ -1,5 +1,5 @@
 # Day 15：RAG + FastAPI —— 知识库问答系统变成 API
-import sys
+import os, sys
 sys.stdout.reconfigure(encoding="utf-8")
 
 from fastapi import FastAPI
@@ -8,7 +8,9 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
-api_key = "YOUR_DASHSCOPE_API_KEY"
+api_key = os.getenv("DASHSCOPE_API_KEY")
+if not api_key:
+    sys.exit("缺少环境变量 DASHSCOPE_API_KEY：请先执行 setx 或 $env:DASHSCOPE_API_KEY=xxx 再运行")
 base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 app = FastAPI()
@@ -24,7 +26,10 @@ embeddings = OpenAIEmbeddings(
 )
 
 def build_store():
-    with open(r"f:\Python\gongc\py_day1\pythonProject3\知识库.txt", "r", encoding="utf-8") as f:
+    kb_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "知识库.txt")
+    if not os.path.exists(kb_path):
+        sys.exit(f"找不到知识库文件：{kb_path}")
+    with open(kb_path, "r", encoding="utf-8") as f:
         text = f.read()
     splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=20)
     chunks = splitter.split_text(text)

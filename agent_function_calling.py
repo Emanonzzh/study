@@ -1,9 +1,11 @@
 # Day 12：Agent —— 让 LLM 自己决定调工具
-import sys, json
+import os, sys, json
 sys.stdout.reconfigure(encoding="utf-8")
 from openai import OpenAI
 
-api_key = "YOUR_DASHSCOPE_API_KEY"
+api_key = os.getenv("DASHSCOPE_API_KEY")
+if not api_key:
+    sys.exit("缺少环境变量 DASHSCOPE_API_KEY：请先执行 setx 或 $env:DASHSCOPE_API_KEY=xxx 再运行")
 client = OpenAI(api_key=api_key, base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
 
 # ① 工具清单：这是给 LLM 看的"说明书"，告诉它有哪些工具能用
