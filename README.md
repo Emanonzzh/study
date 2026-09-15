@@ -153,6 +153,8 @@ Python · LangChain · LangGraph · Chroma · MySQL · SQLite · FastAPI · Stre
 
 | 文档 | 用途 |
 |---|---|
+| `docs/求职/投递执行清单.md` | **照着点就能投**：准备/搜岗位/打招呼/记录/跟进/红旗清单 |
+| `docs/求职/求职打招呼话术.md` | BOSS 打招呼话术（3 版，含两个项目） |
 | `agent_lab/代码导读.md` | 读码顺序 + 面试"讲代码"路线 |
 | `agent_lab/FastAPI入门.md` | FastAPI 零基础入门 |
 | `docs/求职/销售经营分析Agent_项目框架.md` | 销售项目完整框架（分层架构/双线设计/缺口） |
