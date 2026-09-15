@@ -25,8 +25,6 @@
 
 ---
 
----
-
 # 项目一：销售经营分析 Agent（真实电商数据 · 独立开发）
 
 > 在开源企业级项目（FastAPI + MySQL + Redis + Nginx + LangGraph）基础上做**增量演进**，
