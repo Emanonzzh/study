@@ -26,15 +26,22 @@
 |---|---|
 | `api.py` | 6 个接口：`/health` `/metrics` `/anomalies` `/report/{period}` `/reconciliation/{period}` `/analyze` |
 | `api_smoke_test.py` | Python 客户端冒烟测试（7 项：含边界校验 422、404、中文 UTF-8） |
+| `streamlit_app.py` | **销售经营分析看板**（Streamlit + Plotly） |
+| `ui_smoke_test.py` | 用官方 `AppTest` 无头跑一遍看板（UI 层冒烟测试） |
 | `FastAPI入门.md` | 给没写过 FastAPI 的人：四个核心概念 / 状态码 / **`def` vs `async def`** / 练习 / 上生产缺什么 |
+
+看板五个页签：**量价归因（瀑布图）· 维度下钻 · 异常发现 · 报告与对账 · 自然语言问数**。
 
 启动与验证：
 
 ```bash
-python agent_lab/api.py                    # 起服务
-# 浏览器打开 http://127.0.0.1:8000/docs   ← 可直接点着测
-python agent_lab/api_smoke_test.py         # 7 项冒烟（不花钱）
-python agent_lab/api_smoke_test.py --with-llm   # 额外测 /analyze（调 LLM）
+python agent_lab/api.py                          # 起 API 服务
+# 浏览器打开 http://127.0.0.1:8000/docs        ← 可直接点着测
+streamlit run agent_lab/streamlit_app.py --server.port 8502
+# 浏览器打开 http://127.0.0.1:8502             ← 看板
+python agent_lab/api_smoke_test.py               # 7 项接口冒烟（不花钱）
+python agent_lab/ui_smoke_test.py                # UI 冒烟（AppTest 无头执行）
+python agent_lab/api_smoke_test.py --with-llm    # 额外测 /analyze（调 LLM）
 ```
 
 **为什么接口一律用 `def` 而不是 `async def`**：分析是同步阻塞的（pymysql + 报告渲染 1~8 秒）。
