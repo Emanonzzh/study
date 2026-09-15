@@ -41,10 +41,12 @@ BASE_MIN_ORDERS = 30
 
 # ------------------------------------------------------------------ 匹配与打分
 def key_of(a: Anomaly) -> tuple:
+    """异常的唯一标识：维度+取值+期间+方法。差分比对与去重都用它。"""
     return (a.dimension, a.dim_value, a.period, a.method)
 
 
 def matches(a: Anomaly, inj: dict, tol: int) -> bool:
+    """检出是否落在某个注入事件的 [start-tol, end+tol] 区间内（且维度取值相同）。"""
     if a.dim_value != inj["value"]:
         return False
     d = date.fromisoformat(a.period)
@@ -54,6 +56,7 @@ def matches(a: Anomaly, inj: dict, tol: int) -> bool:
 
 
 def _prf(tp: int, fp: int, fn: int) -> dict:
+    """由 TP/FP/FN 算查准率 P、查全率 R、F1（分母为 0 时返回 0，不抛异常）。"""
     precision = tp / (tp + fp) if (tp + fp) else 0.0
     recall = tp / (tp + fn) if (tp + fn) else 0.0
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
@@ -104,6 +107,7 @@ def merge_events(detections: list[Anomaly], gap_days: int = EVENT_GAP_DAYS) -> l
 
 
 def _pack_event(value: str, items: list[Anomaly]) -> dict:
+    """把一组相邻检出打包成一个"事件"（记录起止、方法集合、检出点数、最大偏离）。"""
     deviations = [a.deviation_pct for a in items if a.deviation_pct is not None]
     return {
         "dim_value": value,
@@ -156,6 +160,7 @@ def attribute_fp(a: Anomaly | None, injections: list[dict]) -> str:
 
 # ------------------------------------------------------------------ 运行与报告
 def run_once(min_orders: int) -> dict:
+    """干净表与注入表各跑一次检测，并算出"差分池"（注入表新出现、干净表没有的异常）。"""
     clean = detect(DIMENSION, table=CLEAN_TABLE, freq="day", min_orders=min_orders)
     injected = detect(DIMENSION, table=INJECTED_TABLE, freq="day", min_orders=min_orders)
     clean_keys = {key_of(a) for a in clean}
@@ -164,6 +169,7 @@ def run_once(min_orders: int) -> dict:
 
 
 def main() -> int:
+    """跑完整评测：差分指标 + 事件化指标 + 误报归因 + 门槛扫描，并落盘报告。"""
     if not GT_PATH.exists():
         raise SystemExit(f"❌ 找不到 ground truth：{GT_PATH}\n"
                          f"请先运行 python agent_lab/inject_anomalies.py")
@@ -229,6 +235,7 @@ def main() -> int:
 
 
 def render_md(report: dict) -> str:
+    """把评测结果渲染成 Markdown：方法 / 结果 / 逐条检出 / 门槛扫描 / 误报归因 / 局限。"""
     ev, strict, raw, sweep = (report["event_level"], report["strict"],
                               report["raw"], report["threshold_sweep"])
     n_inj = len(report["injections"])

@@ -72,6 +72,7 @@ class ToolError(Exception):
 
 
 def _connect() -> pymysql.connections.Connection:
+    """建一个只读用途的连接（凭据来自仓库根 .env 的 DB_USER/DB_PASSWORD）。"""
     return pymysql.connect(
         host=os.getenv("DB_HOST", "127.0.0.1"),
         port=int(os.getenv("DB_PORT", "3306")),
@@ -91,6 +92,7 @@ def _num(value: Any) -> Any:
 
 
 def _rows(sql: str, args: tuple = ()) -> list[dict]:
+    """执行查询并返回 dict 列表，同时把 Decimal 转成 float（便于 JSON 序列化）。"""
     conn = _connect()
     try:
         with conn.cursor() as cur:
@@ -102,11 +104,13 @@ def _rows(sql: str, args: tuple = ()) -> list[dict]:
 
 # ---------------------------------------------------------------- 参数校验
 def _check_metric(metric: str) -> None:
+    """指标名必须在口径表白名单里（不在就报错，而不是猜一个默认值）。"""
     if metric not in METRICS:
         raise ToolError(f"未知指标 '{metric}'，可用指标：{list(METRICS)}")
 
 
 def _check_dimension(dimension: str) -> None:
+    """维度名必须是 platform/channel/product 之一（白名单，防注入）。"""
     if dimension not in DIMENSIONS:
         raise ToolError(f"未知维度 '{dimension}'，可用维度：{list(DIMENSIONS)}")
 
@@ -133,6 +137,7 @@ def _check_date(value: str, field: str) -> None:
 
 
 def _check_month(value: str, field: str) -> None:
+    """月份校验：必须 YYYY-MM，且月份在 01~12、年份在数据集范围内。"""
     import re
 
     m = re.fullmatch(r"(\d{4})-(\d{2})", value or "")
@@ -286,6 +291,7 @@ def contribution_breakdown(dimension: str, period_a: str, period_b: str) -> dict
     col = DIMENSIONS[dimension]
 
     def agg(period: str) -> dict[str, dict]:
+        """按维度聚合某一期的实付额与订单数 → {维度值: {rev, n}}。"""
         rows = _rows(
             f"""
             SELECT COALESCE({col}, '未知') AS dim_value,
@@ -307,6 +313,7 @@ def contribution_breakdown(dimension: str, period_a: str, period_b: str) -> dict
     total_nb = sum(v["n"] for v in b.values())
 
     def decompose(rev0, n0, rev1, n1):
+        """量价三因子分解：返回 (量效应, 价效应, 交互项)，三项之和恒等于 ΔR。"""
         aov0 = rev0 / n0 if n0 else 0.0
         aov1 = rev1 / n1 if n1 else 0.0
         volume = (n1 - n0) * aov0

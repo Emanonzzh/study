@@ -96,6 +96,7 @@ TESTS: list[dict] = [
 
 
 def main() -> int:
+    """依次跑 6 个压测场景并打印汇总表（命令行参数可只跑指定场景）。"""
     # 支持只跑指定场景：python agent_lab/p1_stress.py T2 T3
     wanted = {a.upper() for a in sys.argv[1:]} or {t["id"] for t in TESTS}
     results: list[tuple[dict, RunResult]] = []

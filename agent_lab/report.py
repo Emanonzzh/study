@@ -52,32 +52,43 @@ CONSTANT_ALLOWED = {"3.5", "30", "5"}
 
 # ------------------------------------------------------------------ 格式化（模板只拿字符串）
 def _month_range(ym: str) -> tuple[str, str]:
+    """'YYYY-MM' → (当月第一天, 当月最后一天)，喂给 SQL 的 BETWEEN。"""
     y, m = int(ym[:4]), int(ym[5:7])
     return f"{ym}-01", f"{ym}-{calendar.monthrange(y, m)[1]:02d}"
 
 
 def _money(v) -> str:
+    """金额格式：千分位 + 两位小数。None → '—'（不写成 0，避免把缺失当零）。"""
     return f"{float(v):,.2f}" if v is not None else "—"
 
 
 def _int(v) -> str:
+    """整数格式：千分位。"""
     return f"{int(v):,}" if v is not None else "—"
 
 
 def _pct_from_rate(v) -> str:
+    """比例（0.1335）→ 百分数字符串（'13.35%'）。口径表白纸黑字写明比例是 0~1。"""
     return f"{float(v) * 100:.2f}%" if v is not None else "—"
 
 
 def _signed_pct(v) -> str:
+    """带符号百分比（' +15.92%' / '-5.87%'），用于环比列。"""
     return f"{float(v):+.2f}%" if v is not None else "—"
 
 
 # ------------------------------------------------------------------ 收集分析结果
 def collect(period_a: str, period_b: str, dimension: str = "platform") -> dict:
+    """收集报告所需的全部数据，构成**唯一数据源**（授权数字清单也来自这里）。
+
+    包含：两期概览指标、量价分解、维度排名、对比期异常、订单总行数、派生值（环比等）。
+    报告里出现的每个数字都必须能在这份结果里找到 —— 这是文本对账的前提。
+    """
     sa, ea = _month_range(period_a)
     sb, eb = _month_range(period_b)
 
     def overview(start: str, end: str) -> dict:
+        """取一期（月）的 5 个核心指标：实付额/订单数/客单价/退款率/折扣率。"""
         out = {}
         for metric in ("revenue", "orders", "aov", "refund_rate", "discount_rate"):
             out[metric] = query_metrics(metric, start, end)["value"]
@@ -114,6 +125,7 @@ def collect(period_a: str, period_b: str, dimension: str = "platform") -> dict:
 
 
 def _mom(a, b) -> float | None:
+    """环比百分比 =（本期-上期）/上期×100。分母为 0 或缺失时返回 None（不编造 0）。"""
     if a in (None, 0) or b is None:
         return None
     return (float(b) - float(a)) / float(a) * 100
@@ -121,6 +133,11 @@ def _mom(a, b) -> float | None:
 
 # ------------------------------------------------------------------ 组装视图
 def build_view(analysis: dict) -> dict:
+    """把分析结果转成"全是字符串"的视图，供模板直接渲染。
+
+    关键：所有格式化（千分位、百分比、符号）都发生在 Python 里，
+    模板拿到的已经是成品字符串 —— 模板无法"顺手算错"。
+    """
     ov_a, ov_b, dec = analysis["ov_a"], analysis["ov_b"], analysis["decomposition"]
     dim = analysis["dimension"]
     dim_label = {"platform": "平台", "channel": "渠道", "product": "商品"}[dim]
@@ -207,6 +224,7 @@ def build_view(analysis: dict) -> dict:
 
 
 def render(view: dict) -> str:
+    """用 Jinja2 渲染报告模板（模板里只有占位符，没有任何计算）。"""
     template = Template(TEMPLATE_PATH.read_text(encoding="utf-8"))
     return template.render(**view)
 
@@ -218,6 +236,7 @@ NUM_RE = re.compile(r"(?<![\w.])(-?\d{1,3}(?:,\d{3})+(?:\.\d+)?|-?\d+(?:\.\d+)?)
 
 
 def _walk_numbers(obj) -> list[float]:
+    """递归收集任意嵌套结构里的所有数字 —— 构成"授权数字清单"。"""
     out: list[float] = []
     if isinstance(obj, bool):
         return out
@@ -324,6 +343,11 @@ def reconcile_db(analysis: dict) -> dict:
 
 # ------------------------------------------------------------------ 可选：LLM 写结论并对账
 def llm_narrative(view: dict) -> str:
+    """（可选）让 LLM 写「结论与建议」。
+
+    只把它**已算好**的结构化结果喂进去，并要求"不得引入结果里没有的数字"；
+    返回的文本随后仍要过一遍 `verify_numbers` —— 模型的话不能免检。
+    """
     from agent_lab.p1_react import call_llm
 
     facts = {k: view[k] for k in ("period_a", "period_b", "ov_a", "ov_b", "mom", "dec")}
@@ -339,6 +363,10 @@ def llm_narrative(view: dict) -> str:
 
 
 def main() -> int:
+    """命令行入口：收集 → 渲染 → 文本级对账 → 对账器自测 → 数据库级复算 →（可选）LLM 对账。
+
+    只有全部通过才打印"报告可发布"；任一失败即返回非 0，**不允许带着未对账的数字发布**。
+    """
     ap = argparse.ArgumentParser(description="经营分析报告生成 + 数字对账")
     ap.add_argument("--period-a", default="2025-10")
     ap.add_argument("--period-b", default="2025-11")

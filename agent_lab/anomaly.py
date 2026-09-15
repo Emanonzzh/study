@@ -40,6 +40,12 @@ MAD_SCALE = 1.4826  # 正态分布下 MAD → 标准差的换算系数
 
 @dataclass
 class Anomaly:
+    """一条异常记录。
+
+    必须自带**判据**（baseline / deviation_pct / robust_z / orders），
+    否则无法回答"凭什么判它是异常" —— 不可解释的异常等于没有异常。
+    """
+
     dimension: str
     dim_value: str
     freq: str
@@ -53,11 +59,13 @@ class Anomaly:
     orders: int
 
     def as_dict(self) -> dict:
+        """转 dict，便于写 JSON / 传给报告层。"""
         return asdict(self)
 
 
 # ------------------------------------------------------------------ 取数
 def _dim_col(dimension: str) -> str:
+    """维度别名 → 真实列名（platform → platform_type）。白名单，防注入。"""
     if dimension not in DIMENSIONS:
         raise ValueError(f"未知维度 {dimension}，可用：{list(DIMENSIONS)}")
     return DIMENSIONS[dimension]
@@ -101,11 +109,17 @@ def fetch_series(dimension: str, table: str = "orders", freq: str = "day",
 
 
 def days_in_month(period: str) -> int:
+    """'YYYY-MM' → 当月天数。日历校正用（2 月 28 天不能和 31 天的月直接比）。"""
     return calendar.monthrange(int(period[:4]), int(period[5:7]))[1]
 
 
 # ------------------------------------------------------------------ 基线原语
 def _rolling_median(values: list[float], window: int) -> list[float]:
+    """居中滚动**中位数**基线（不是均值）。
+
+    为什么用中位数：脉冲点会被算进均值、把基线拉高，从而掩盖自己；
+    中位数对离群值稳健，异常点无法"抬走"自己的基线。
+    """
     half = max(1, window // 2)
     return [median(values[max(0, i - half):min(len(values), i + half + 1)]) for i in range(len(values))]
 
@@ -125,6 +139,11 @@ def _same_weekday_baseline(periods: list[str], values: list[float], weeks: int =
 
 
 def _mad(values: list[float]) -> float:
+    """MAD（绝对中位差）= median(|x − median(x)|)。
+
+    乘 1.4826 就是稳健标准差估计。它比标准差抗离群值 ——
+    这正是"异常点无法把自己的阈值抬高"的原因（原则 4）。
+    """
     if not values:
         return 0.0
     med = median(values)

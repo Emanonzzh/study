@@ -107,6 +107,7 @@ def sanity_check() -> None:
 
 
 def write_ground_truth() -> None:
+    """把注入清单落盘为 ground truth（评测脚本读它来算 P/R/F1）。"""
     GT_PATH.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "note": "在真实 orders 上注入的已知异常。评测时用差分法：只统计注入表上新出现的异常。",

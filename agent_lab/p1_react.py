@@ -97,6 +97,8 @@ class Step:
 
 @dataclass
 class RunResult:
+    """一次 Agent 运行的完整结果：答案 + 轨迹 + 停止原因 + 成本 + 失败模式。"""
+
     question: str
     answer: str = ""
     steps: list[Step] = field(default_factory=list)
@@ -108,6 +110,7 @@ class RunResult:
 
     @property
     def tool_calls(self) -> int:
+        """工具调用次数（步骤数 ≠ 工具调用数：收尾那一步不带 Action）。"""
         return sum(1 for s in self.steps if s.action)
 
 
@@ -362,6 +365,7 @@ QUESTIONS = [
 
 
 def print_summary(r: RunResult) -> None:
+    """打印单次运行的收尾摘要：答案 / 停止原因 / 步数 / token / 失败模式计数。"""
     print("\n" + "=" * 78)
     print(f"问题：{r.question}")
     print(f"回答：{r.answer or '（未得出结论）'}")
