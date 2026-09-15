@@ -20,6 +20,33 @@
 | `evaluate_anomaly.py` | **差分口径 + 事件化后处理**的 P/R/F1 评测 |
 | `eval/anomaly_report.md` | 评测报告（含门槛取舍实验与误报归因） |
 
+## 三、接口层（D6）：FastAPI
+
+| 文件 | 内容 |
+|---|---|
+| `api.py` | 6 个接口：`/health` `/metrics` `/anomalies` `/report/{period}` `/reconciliation/{period}` `/analyze` |
+| `api_smoke_test.py` | Python 客户端冒烟测试（7 项：含边界校验 422、404、中文 UTF-8） |
+| `FastAPI入门.md` | 给没写过 FastAPI 的人：四个核心概念 / 状态码 / **`def` vs `async def`** / 练习 / 上生产缺什么 |
+
+启动与验证：
+
+```bash
+python agent_lab/api.py                    # 起服务
+# 浏览器打开 http://127.0.0.1:8000/docs   ← 可直接点着测
+python agent_lab/api_smoke_test.py         # 7 项冒烟（不花钱）
+python agent_lab/api_smoke_test.py --with-llm   # 额外测 /analyze（调 LLM）
+```
+
+**为什么接口一律用 `def` 而不是 `async def`**：分析是同步阻塞的（pymysql + 报告渲染 1~8 秒）。
+FastAPI 对 `def` 会自动丢线程池、不占事件循环；写成 `async def` 里跑同步阻塞代码会**卡死整个服务**。
+
+## 四、两份文档
+
+| 文件 | 用途 |
+|---|---|
+| `代码导读.md` | 读码顺序 / 每个文件的关键代码片段与解释 / 面试"讲代码"路线 / 9 个追问 |
+| `FastAPI入门.md` | FastAPI 零基础入门（结合本项目真实代码） |
+
 ## ⚠️ 运行前提
 
 - 需要 **MySQL**（`orders` 表 102,287 行）+ **DeepSeek key**（`.env`）
