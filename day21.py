@@ -1,9 +1,11 @@
 import os
+import re
 import sys
 import streamlit as st
 from langchain_core.tools import tool
 from langchain.agents import create_agent
 import sqlite3
+import config
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
@@ -16,6 +18,11 @@ base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 llm = ChatOpenAI(model="qwen-plus", api_key=api_key, base_url=base_url)
 
 @st.cache_resource
+def get_article_labels(chunk):
+    """从切片文本里抽取出现的条款号列表，如【'第四条', '第五条'】"""
+    return re.findall(r"第[一二三四五六七八九十百]+条", chunk)
+
+
 def build_store():
     embeddings = OpenAIEmbeddings(
         model="text-embedding-v3",
@@ -26,33 +33,41 @@ def build_store():
     )
     with open("地质灾害防治条例.txt", "r", encoding="utf-8") as f:
         text = f.read()
-    splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=20)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=config.CHUNK_SIZE, chunk_overlap=config.CHUNK_OVERLAP)
     chunks = splitter.split_text(text)
-    return Chroma.from_texts(chunks, embeddings, collection_name="rs_kb_web")
+    metadatas = [{"articles":",".join(get_article_labels(c))} for c in chunks]
+    return Chroma.from_texts(chunks, embeddings, collection_name="rs_kb_web_v2",
+                             metadatas = metadatas,)
 
 store = build_store()
 
 @tool
 def query_regulation(keyword: str) -> str:
     """查询《地质灾害防治条例》条款。keyword 是问题关键词，如"地质灾害等级"、"预报制度"。"""
-    docs = store.similarity_search(keyword, k=4)
+    docs = store.similarity_search(keyword, k=config.TOP_K)
     if not docs:
         return"条例中未找到相关内容"
     lines = []
     for d in docs:
-        lines.append(d.page_content)
+        source_tag = d.metadata.get("articles","未识别条款")
+        lines.append(f"【来源：{source_tag}】{d.page_content}")
     return "\n\n".join(lines) 
 
 @tool
 def query_dataset(keyword:str) -> str:
     """查询遥感监测数据集元数据。keyword 是关键词，例如"青藏"、"InSAR"、"理塘"。"""
-    conn = sqlite3.connect("monitoring.db")
-    cursor = conn.cursor()  
-    cursor.execute(
-    "SELECT * FROM datasets WHERE name LIKE ? OR region LIKE ? OR method LIKE ?",
-    (f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"),
-)
-    rows = cursor.fetchall()
+    try:
+        conn = sqlite3.connect("monitoring.db")
+        cursor = conn.cursor()  
+        cursor.execute(
+        f"SELECT * FROM datasets WHERE name LIKE ? OR region LIKE ? OR method LIKE ? LIMIT {config.SQL_LIMIT}",
+        (f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"),
+        )
+        rows = cursor.fetchall()
+
+    except Exception as e:
+        return f"数据查询出错：{e}"
+    
     if not rows:
         conn.close()
         return "未找到相关数据集"
@@ -99,16 +114,16 @@ def risk_assessment(region:str) -> str:
     avg_step = (deforms[-1] - deforms[0]) / (len(deforms) - 1)
 
     score = 0
-    if recent_rate > 10:
-        score += 40
+    if recent_rate > config.RATE_THRESHOLD:
+        score += config.RATE_SCORE
     if second_rate > first_rate:
-        score += 30
-    if last_step > avg_step * 3:
-        score += 30
+        score += config.ACCEL_SCORE
+    if last_step > avg_step * config.ANOMALY_RATIO:
+        score += config.ACCEL_SCORE
 
-    if score <= 30:
+    if score <= config.LEVEL_LOW:
         level = "低风险"
-    elif score <= 60:
+    elif score <= config.LEVEL_MID:
         level = "中风险"
     else:
         level = "较高风险"
