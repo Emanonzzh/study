@@ -9,7 +9,7 @@ print(ava(nums))
 
 letters = ["x", "y"]
 for i, ch in enumerate(letters, start=1):
-    print(f"{i}:{ch}")
+    print(f"第{i}个是{ch}")    
 
 text = "banana"
 counts = {}
