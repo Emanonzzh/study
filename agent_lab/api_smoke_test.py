@@ -20,7 +20,12 @@ import time
 import urllib.error
 import urllib.request
 
-BASE = "http://127.0.0.1:8000"
+BASE = "http://127.0.0.1:8010"   # 端口不是默认的 8000：本机 8000 被 C-Lodop 打印控件占着（见 agent_lab/api.py 的 PORT 注释）
+
+# Windows 默认控制台是 GBK，直接打印 ✅/❌ 会 UnicodeEncodeError 崩掉整个测试。
+# 显式把 stdout 改成 UTF-8，让这个脚本在默认 cmd/PowerShell 里也能跑。
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 PASS, FAIL = "✅", "❌"
 results: list[tuple[str, bool, str]] = []
 

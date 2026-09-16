@@ -14,7 +14,7 @@ FastAPI = "把普通 Python 函数变成 HTTP 接口"的框架。
    - 查询参数：`/metrics?period=2025-11` → 函数参数带默认值
    - 请求体：POST 的 JSON → 用 Pydantic 模型接收
 3. **Pydantic 模型**：把请求/响应声明成类，FastAPI 自动做类型校验 + 自动写文档
-4. **自动文档**：启动后打开 http://127.0.0.1:8000/docs 可直接点击调用
+4. **自动文档**：启动后打开 http://127.0.0.1:8010/docs 可直接点击调用
 
 ================================================================================
 【本项目最重要的一个决策：用 `def` 而不是 `async def`】
@@ -27,9 +27,9 @@ FastAPI = "把普通 Python 函数变成 HTTP 接口"的框架。
 `/analyze` 这类慢接口旁边标注"为什么这里不 async"。
 
 启动：
-    python agent_lab/api.py                 # 默认 127.0.0.1:8000
-    # 或 uvicorn agent_lab.api:app --reload --port 8000
-然后浏览器打开 http://127.0.0.1:8000/docs
+    python agent_lab/api.py                 # 默认 127.0.0.1:8010（端口常量的原因见下方 PORT 注释）
+    # 或 uvicorn agent_lab.api:app --reload --port 8010
+然后浏览器打开 http://127.0.0.1:8010/docs
 """
 from __future__ import annotations
 
@@ -47,6 +47,17 @@ from agent_lab import report as report_mod  # noqa: E402
 from agent_lab.anomaly import detect  # noqa: E402
 from agent_lab.db import query  # noqa: E402
 from agent_lab.tools import METRICS, query_metrics  # noqa: E402
+
+# ------------------------------------------------------------------ 端口
+# 【踩坑记录 · 为什么不是默认的 8000】
+# 本机 8000 被 **C-Lodop 打印控件**（`CLodopPrint32.exe`，开机自启，绑 `0.0.0.0:8000`）占着。
+# 危险的地方在于它**不会报错**：Windows 允许我们再绑一个更具体的 `127.0.0.1:8000`，
+# uvicorn 照样打印 "Uvicorn running on http://127.0.0.1:8000"，
+# 但发往 127.0.0.1:8000 的请求会被那条通配 socket 抢走 ——
+# 打开 `/docs` 看到的是打印控件的欢迎页，`/health` 还返回 HTTP 200（HTML），
+# 于是任何"只看端口在不在监听 / 只看状态码是不是 200"的健康检查都会**误报成功**。
+# 教训：健康检查必须校验**返回内容**，而不是端口状态或状态码。
+PORT = 8010
 
 # ------------------------------------------------------------------ 应用对象
 # FastAPI() 创建的就是"这个 Web 应用"。title/description 会直接显示在 /docs 页面上。
@@ -237,4 +248,4 @@ if __name__ == "__main__":
     import uvicorn
 
     # reload=False：生产要 False（改代码不自动重启）；开发可设 True 边改边生效
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run(app, host="127.0.0.1", port=PORT, reload=False)

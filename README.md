@@ -84,13 +84,15 @@ python agent_lab/p1_react.py              # 手写 ReAct 跑 3 个真实问题
 python agent_lab/p1_stress.py             # 6 场景故障注入压测
 ```
 
-启动后打开 **http://127.0.0.1:8000/docs** 可直接点着调接口。
+启动后打开 **http://127.0.0.1:8010/docs** 可直接点着调接口。
+（端口不是默认的 8000：本机 8000 被 C-Lodop 打印控件 `CLodopPrint32.exe` 开机自启占用，
+且它绑 `0.0.0.0:8000`，会让我们的 `127.0.0.1:8000` **起了却访问不到** —— 详见 `agent_lab/api.py` 的 `PORT` 注释。）
 
 ## 目录
 
 | 文件 | 说明 |
 |---|---|
-| `agent_lab/tools.py` | 4 个纯函数工具 + KPI 口径表 + **量价三因子分解**（含加总断言） |
+| `agent_lab/tools.py` | 4 个确定性分析工具（内部查 MySQL）+ KPI 口径表 + **量价三因子分解**（含加总断言） |
 | `agent_lab/anomaly.py` | 异常检测：周内效应校正 + 日历校正 + MAD 稳健统计 + 脉冲/漂移两类 |
 | `agent_lab/inject_anomalies.py` | 注入 6 个已知异常造评测集（副本表，不动原表） |
 | `agent_lab/evaluate_anomaly.py` | 差分口径 + 事件化后处理的 P/R/F1 评测 + 门槛扫描 + 误报归因 |

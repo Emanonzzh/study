@@ -17,6 +17,16 @@
   改用 `calendar.monthrange` 按当月实际天数校验。
 - ✅ **反证过**：把修复临时还原后重跑 = **15 failed + 1 collection error**；恢复后 = **230 passed**。
   这就是"测试曾经失败过"的证据，别省这一步。
+- ❗ **API 端口从 8000 改成 8010**（`agent_lab/api.py` 的 `PORT` 常量）。原因：本机 8000 被
+  **C-Lodop 打印控件**（`CLodopPrint32.exe`，开机自启，绑 `0.0.0.0:8000`）占着。它不会报错 ——
+  Windows 允许我们再绑 `127.0.0.1:8000`，uvicorn 照常打印"running on 127.0.0.1:8000"，
+  但请求全被那条通配 socket 抢走：`/docs` 是打印控件页面、`/health` 返回 **HTTP 200 HTML**。
+  原 `start-sales-stack.ps1` 只判断"端口在不在监听"→ 报 `already listening - skipped` → 拿那个 200 宣布成功。
+- ✅ **重写 `F:\soft\start-sales-stack.ps1`**：健康检查改为**校验响应体**（`/health` 必须解析成 JSON 且
+  `status=ok`；Streamlit 用 `/_stcore/health` 返回 `ok`）；启动前查端口占用者，是别人就**拒绝启动并点名**；
+  最后不健康就 `exit 1` 打印"do NOT demo yet"。已反证：把端口换回 8000 跑，脚本立刻拦住并报出 `CLodopPrint32`。
+- ✅ `api_smoke_test.py` 顺手修了 GBK 控制台崩溃（打印 ✅/❌ 触发 `UnicodeEncodeError`）→
+  `sys.stdout.reconfigure(encoding="utf-8")`，现在默认 cmd/PowerShell 直接能跑。
 - ⚠️ **待办**：Docker compose 端到端仍未验证（**对外不要说已容器化**）。
 
 ### 📌 本次同步的三处（按仓库规则）

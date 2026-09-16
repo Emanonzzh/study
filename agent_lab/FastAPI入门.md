@@ -21,11 +21,16 @@ def health():
 跑起来：
 
 ```bash
-python agent_lab/api.py          # 或 uvicorn agent_lab.api:app --reload --port 8000
+python agent_lab/api.py          # 或 uvicorn agent_lab.api:app --reload --port 8010
 ```
 
-然后浏览器打开 **http://127.0.0.1:8000/docs** —— 你会看到一个**可以点着测试**的页面，
+然后浏览器打开 **http://127.0.0.1:8010/docs** —— 你会看到一个**可以点着测试**的页面，
 每个接口都有表单、能直接发请求、能看到返回。**这是 FastAPI 最大的卖点**，不用写一行前端。
+
+> **为什么不是 8000**：本机 8000 被 C-Lodop 打印控件（`CLodopPrint32.exe`，开机自启）占用，
+> 它绑的是 `0.0.0.0:8000`。我们在 `127.0.0.1:8000` 上**仍然能启动成功**（Windows 允许共存），
+> 但请求会被那条通配 socket 抢走 —— `/docs` 打开是打印控件的页面，`/health` 还返回 200。
+> 端口定义在 `agent_lab/api.py` 的 `PORT` 常量。
 
 ---
 
@@ -140,13 +145,13 @@ async def get_metrics(...):    # 异步函数
 
 ### 方式 1：`/docs` 页面直接点（最直观，推荐新手）
 
-打开 http://127.0.0.1:8000/docs → 展开接口 → "Try it out" → 填参数 → Execute。
+打开 http://127.0.0.1:8010/docs → 展开接口 → "Try it out" → 填参数 → Execute。
 
 ### 方式 2：curl
 
 ```bash
-curl "http://127.0.0.1:8000/health"
-curl -X POST "http://127.0.0.1:8000/analyze" \
+curl "http://127.0.0.1:8010/health"
+curl -X POST "http://127.0.0.1:8010/analyze" \
      -H "Content-Type: application/json" \
      -d '{"question":"2025年11月的实付额是多少？","max_steps":4}'
 ```
@@ -169,7 +174,7 @@ python agent_lab/api_smoke_test.py --with-llm # 额外测 /analyze
 ```powershell
 $json  = @{ question = "2025年11月的实付额是多少？" } | ConvertTo-Json
 $bytes = [Text.Encoding]::UTF8.GetBytes($json)          # ← 关键：显式转 UTF-8 字节
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/analyze" -Method Post `
+Invoke-RestMethod -Uri "http://127.0.0.1:8010/analyze" -Method Post `
     -Body $bytes -ContentType "application/json; charset=utf-8"
 ```
 

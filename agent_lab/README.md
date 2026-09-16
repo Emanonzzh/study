@@ -36,7 +36,7 @@
 
 ```bash
 python agent_lab/api.py                          # 起 API 服务
-# 浏览器打开 http://127.0.0.1:8000/docs        ← 可直接点着测
+# 浏览器打开 http://127.0.0.1:8010/docs        ← 可直接点着测
 streamlit run agent_lab/streamlit_app.py --server.port 8502
 # 浏览器打开 http://127.0.0.1:8502             ← 看板
 python agent_lab/api_smoke_test.py               # 7 项接口冒烟（不花钱）
