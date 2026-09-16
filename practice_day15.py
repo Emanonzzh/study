@@ -32,3 +32,11 @@ class MonitorPoint:
 p1 = MonitorPoint("川西-01", 102.5, 30.1)   
 p1.set_rate(3.5)
 print(p1.name, p1.x, p1.y, p1.rate)
+p1.set_rate(3.5)          # 你已有的
+p2 = MonitorPoint("珠海-02", 113.2, 22.5)    # 追加：造第二个
+p2.set_rate(1.2)
+print(p1.rate, p2.rate)   # 预期：3.5 1.2 —— 两个盒子互不串台
+# 追加实验：两个实例互不干扰（self = 实例自己的验证）
+p2 = MonitorPoint("珠海-02", 113.2, 22.5)
+p2.set_rate(1.2)
+print(p1.rate, p2.rate)   # 预期 3.5 1.2
