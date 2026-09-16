@@ -121,7 +121,12 @@ def _check_date(value: str, field: str) -> None:
     【D2 压测抓出的 bug】原实现只用正则校验格式，于是 "2025-13-01" 被放行，
     MySQL 把它当无效日期返回空值，模型看到 null/0 行只能自己去猜"13 月不存在"。
     **本该由工具明确报错**（错误信息越明确，模型自我修正越可靠）。
+
+    【补修】原实现只检查 day 在 01~31，于是 "2025-02-31"、"2025-04-31" 仍被放行 ——
+    和 "2025-13" 是同一类 bug（只校格式/粗范围，不校真实日历）。
+    改用 calendar.monthrange 按当月实际天数校验，闰年由标准库负责。
     """
+    import calendar
     import re
 
     m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", value or "")
@@ -130,10 +135,14 @@ def _check_date(value: str, field: str) -> None:
     year, month, day = int(m.group(1)), int(m.group(2)), int(m.group(3))
     if not 1 <= month <= 12:
         raise ToolError(f"{field} 的月份必须在 01~12 之间，收到 '{value}'（不存在 13 月这种月份）")
-    if not 1 <= day <= 31:
-        raise ToolError(f"{field} 的日期必须在 01~31 之间，收到 '{value}'")
     if not 2020 <= year <= 2030:
         raise ToolError(f"{field} 的年份 {year} 超出本数据集范围（数据仅覆盖 2025 年）")
+    last_day = calendar.monthrange(year, month)[1]
+    if not 1 <= day <= last_day:
+        raise ToolError(
+            f"{field} 的日期必须在 01~{last_day:02d} 之间（{year} 年 {month} 月实际只有 {last_day} 天），"
+            f"收到 '{value}'"
+        )
 
 
 def _check_month(value: str, field: str) -> None:
@@ -275,6 +284,27 @@ def rank_dimension(
     }
 
 
+# ---------------------------------------------------------------- 纯计算（可脱离数据库单测）
+def decompose(rev0: float, n0: int, rev1: float, n1: int) -> tuple[float, float, float]:
+    """量价三因子分解：返回 (量效应, 价效应, 交互项)，三项之和**恒等于** ΔR = rev1 - rev0。
+
+    数学（Revenue = 订单数 N × 客单价 AOV）：
+        ΔR = (N1-N0)·AOV0        量效应
+           + N0·(AOV1-AOV0)      价效应
+           + (N1-N0)·(AOV1-AOV0) 交互项
+
+    这个恒等式是精确的（不是近似），所以可以用 `sum - ΔR == 0` 当断言。
+    原先是 `contribution_breakdown` 里的嵌套函数，为了能独立单测才提到模块级 ——
+    **嵌套函数在 Python 里 import 不到，等于不可测**。
+    """
+    aov0 = rev0 / n0 if n0 else 0.0
+    aov1 = rev1 / n1 if n1 else 0.0
+    volume = (n1 - n0) * aov0
+    price = n0 * (aov1 - aov0)
+    inter = (n1 - n0) * (aov1 - aov0)
+    return volume, price, inter
+
+
 def contribution_breakdown(dimension: str, period_a: str, period_b: str) -> dict:
     """对比两个自然月的**量价结构分解 + 贡献度**（回答"为什么涨/跌"的核心工具）。
 
@@ -311,15 +341,6 @@ def contribution_breakdown(dimension: str, period_a: str, period_b: str) -> dict
     total_b = sum(v["rev"] for v in b.values())
     total_na = sum(v["n"] for v in a.values())
     total_nb = sum(v["n"] for v in b.values())
-
-    def decompose(rev0, n0, rev1, n1):
-        """量价三因子分解：返回 (量效应, 价效应, 交互项)，三项之和恒等于 ΔR。"""
-        aov0 = rev0 / n0 if n0 else 0.0
-        aov1 = rev1 / n1 if n1 else 0.0
-        volume = (n1 - n0) * aov0
-        price = n0 * (aov1 - aov0)
-        inter = (n1 - n0) * (aov1 - aov0)
-        return volume, price, inter
 
     delta_total = total_b - total_a
     items = []

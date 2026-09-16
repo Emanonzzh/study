@@ -49,8 +49,11 @@ from agent_lab.tools import ToolError, call_tool, tool_catalog_text  # noqa: E40
 load_dotenv(str(PROJECT_ROOT / ".env"))
 
 # ------------------------------------------------------------------ 配置
-MAX_STEPS = 8               # 步数上限（机制 #2）
-TOKEN_BUDGET = 24000        # 总 token 预算（机制 #2）
+# 注意：这两个是**默认值**，不是运行期开关。
+# 单次运行的上限请通过 run_agent(max_steps=..., token_budget=...) 传入，
+# 不要改写模块全局 —— 并发下会互相污染（见 run_agent 的踩坑记录）。
+MAX_STEPS = 8               # 步数上限默认值（机制 #2）
+TOKEN_BUDGET = 24000        # 总 token 预算默认值（机制 #2）
 STEP_TIMEOUT_SEC = 60       # 单次 LLM 调用超时
 OBS_MAX_CHARS = 1800        # observation 截断长度（机制 #3：上下文工程）
 TEMPERATURE = 0.0           # 分析类任务必须确定性
@@ -214,14 +217,32 @@ def parse_model_output(content: str) -> dict:
 
 
 # ------------------------------------------------------------------ ReAct 主循环
-def run_agent(question: str, verbose: bool = True, tool_hook=None) -> RunResult:
+def run_agent(question: str, verbose: bool = True, tool_hook=None,
+              max_steps: int | None = None, token_budget: int | None = None) -> RunResult:
     """跑一轮 ReAct。
 
     Args:
         tool_hook: 可选钩子 `(name, args) -> dict`，用于**故障注入压测**：
                    可以在真实工具外包裹报错、延迟、返回空数据等，
                    用来验证"模型能不能读懂错误并自我修正"。
+        max_steps: 本次运行的步数上限。`None` 时用模块默认值 `MAX_STEPS`。
+        token_budget: 本次运行的 token 预算。`None` 时用模块默认值 `TOKEN_BUDGET`。
+
+    【踩坑记录 · 为什么这两个参数必须按次传入，而不是改模块全局】
+    最初的实现是让调用方（FastAPI 的 /analyze）临时改写模块全局 `MAX_STEPS`，
+    用完再还原。单请求跑起来没问题，但 FastAPI 的同步 `def` 接口是跑在**线程池**里的，
+    两个并发请求会交错执行：
+
+        请求 A: old=8 → 全局设为 3 ────────────────► 还原 8
+        请求 B:            old=3 → 全局设为 10 ──────────► 还原 3（把 A 的设置覆盖/污染）
+
+    结果是 A 请求可能真的跑满 8~10 步（**多花钱**），而且还原顺序一乱，
+    后续请求还会继承到一个谁也没设过的值。这是典型的"可变共享状态 + 无锁"竞态。
+    修法：上限作为**参数**沿调用链传下去，循环只读局部变量，模块常量退化为默认值。
+    教训：全局变量不是"配置"，是**跨请求共享的可变状态**。
     """
+    step_limit = MAX_STEPS if max_steps is None else max_steps
+    budget = TOKEN_BUDGET if token_budget is None else token_budget
     result = RunResult(question=question)
     t0 = time.time()
     messages = [
@@ -231,7 +252,7 @@ def run_agent(question: str, verbose: bool = True, tool_hook=None) -> RunResult:
     seen_actions: dict[str, int] = {}          # 重复动作检测（机制 #2）
     total_tokens = 0
 
-    for step_no in range(1, MAX_STEPS + 1):
+    for step_no in range(1, step_limit + 1):
         step = Step(index=step_no)
         st = time.time()
         try:
@@ -345,12 +366,12 @@ def run_agent(question: str, verbose: bool = True, tool_hook=None) -> RunResult:
         messages.append({"role": "assistant", "content": content})
         messages.append({"role": "user", "content": f"Observation: {observation}"})
 
-        if total_tokens > TOKEN_BUDGET:
+        if total_tokens > budget:
             result.failure_modes.append("token_budget_exceeded")
-            result.stop_reason = f"token 预算耗尽（{total_tokens} > {TOKEN_BUDGET}）"
+            result.stop_reason = f"token 预算耗尽（{total_tokens} > {budget}）"
             break
     else:
-        result.stop_reason = f"达到步数上限 {MAX_STEPS}"
+        result.stop_reason = f"达到步数上限 {step_limit}"
 
     result.elapsed_ms = round((time.time() - t0) * 1000, 1)
     return result

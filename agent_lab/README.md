@@ -6,7 +6,7 @@
 
 | 文件 | 内容 |
 |---|---|
-| `tools.py` | 4 个纯函数工具：指标查询 / 月度趋势 / 维度排名 / **量价三因子分解**（含精确加总断言） |
+| `tools.py` | 4 个工具（**确定性分析工具**，内部查 MySQL）：指标查询 / 月度趋势 / 维度排名 / **量价三因子分解**（含精确加总断言） |
 | `p1_react.py` | 手写 ReAct 循环：步数上限 / token 预算 / 重复动作检测 / observation 截断 / 错误回传 / 全轨迹 |
 | `p1_stress.py` | 6 场景故障注入压测（超纲 / 非法参数 / DB 超时 / 模糊提问 / 跨维度 / 重度取数） |
 | `db.py` | 统一数据库连接 |
@@ -42,12 +42,37 @@ streamlit run agent_lab/streamlit_app.py --server.port 8502
 python agent_lab/api_smoke_test.py               # 7 项接口冒烟（不花钱）
 python agent_lab/ui_smoke_test.py                # UI 冒烟（AppTest 无头执行）
 python agent_lab/api_smoke_test.py --with-llm    # 额外测 /analyze（调 LLM）
+python -m pytest                                 # 单元测试（230 项，不需要 MySQL / 不需要 LLM）
 ```
 
 **为什么接口一律用 `def` 而不是 `async def`**：分析是同步阻塞的（pymysql + 报告渲染 1~8 秒）。
 FastAPI 对 `def` 会自动丢线程池、不占事件循环；写成 `async def` 里跑同步阻塞代码会**卡死整个服务**。
 
-## 四、两份文档
+## 四、单元测试（pytest，230 项，**不需要 MySQL / 不需要 LLM**）
+
+| 文件 | 覆盖内容 |
+|---|---|
+| `tests/test_decompose.py` | 量价分解：语义（纯量/纯价/同涨/下降）· 恒等式随机性质 · **精度边界** |
+| `tests/test_validation.py` | 入参守卫：月份/日期/维度/指标白名单 · 口径表完整性 |
+| `tests/test_verify_numbers.py` | 报告对账器：该抓的假数字必抓 · 该放行的真数字不误判 · **对账器自测** |
+| `tests/test_react_loop.py` | ReAct 循环：用**假 LLM** 驱动，覆盖停止条件 / 死循环 / 报错重试 / 畸形输出 / **并发竞态回归** |
+
+三个刻意的设计决定：
+
+1. **不依赖 MySQL 和 LLM。** `tests/conftest.py` 里有 autouse 夹具把 `pymysql.connect`
+   和 `urllib.request.urlopen` 换成"一调用就报错"——任何测试不小心引入外部依赖会**立刻响亮地失败**。
+   理由：一个"必须有数据库才能跑"的测试套件，在面试官机器上、在 CI 里都是跑不起来的，那是负债不是资产。
+2. **只收集测试目录。** `pytest.ini` 把 `testpaths` 限定为 `agent_lab/tests`：
+   `api_smoke_test.py` / `ui_smoke_test.py` 需要先起服务，放开收集会让 `pytest` 在干净环境下必然失败。
+3. **为了可测而重构。** `decompose` 原本是 `contribution_breakdown` 里的**嵌套函数**，
+   而嵌套函数在 Python 里 import 不到、等于不可测，所以提到了模块级。
+
+```bash
+python -m pytest              # 全部（约 0.3 秒）
+python -m pytest -q agent_lab/tests/test_react_loop.py
+```
+
+## 五、两份文档
 
 | 文件 | 用途 |
 |---|---|
@@ -61,9 +86,11 @@ FastAPI 对 `def` 会自动丢线程池、不占事件循环；写成 `async def
 
 ## 本目录定位
 
-- 这是**可读快照**，方便在别的电脑上 `git pull` 后阅读学习
-- **活的版本**在 `ai-commerce-intelligence-platform/agent_lab/`（另一个仓库），会继续迭代
-- 两处如有差异，以那边为准
+- 这是销售经营分析项目的**代码快照**，方便在别的电脑上 `git pull` 后阅读学习
+- **开发时**在 `ai-commerce-intelligence-platform/agent_lab/` 里跑（那边有 `.venv` 和数据环境），
+  但那份 `agent_lab/` **没有纳入那个仓库的 git**（`git status` 显示为未跟踪），
+  所以**这里才是这个项目唯一的版本化副本**
+- 改动后请把源码与 `tests/` 一起同步回开发目录，避免两份分叉
 
 ## 学习重点（面试要能讲）
 
@@ -73,3 +100,11 @@ FastAPI 对 `def` 会自动丢线程池、不占事件循环；写成 `async def
 4. **异常检测第一版为什么错**：175 个误报的根因是**周内效应**（拿周六比周一）
 5. **评测方法也会错**：P 只有 35% 时先逐条归因，发现"误报"全是同一事件的多次检出 →
    加**事件化后处理**而不是调阈值；并用**差分口径**剔除真实业务事件（元旦暴涨）的噪声地板
+6. **全局变量不是"配置"，是跨请求共享的可变状态**：`/analyze` 原来靠临时改写模块全局
+   `MAX_STEPS` 来控制单次请求的步数，单请求没问题，但同步 `def` 接口跑在**线程池**里，
+   并发时 A 请求会按 B 请求设的步数跑满（**真的多花钱**），`finally` 的还原顺序还会互相覆盖。
+   改成 `run_agent(max_steps=...)` 参数后，模块常量退化为"默认值"。
+   `test_concurrent_runs_keep_their_own_step_limit` 就是防止有人改回去的回归测试。
+7. **"测试通过"本身不是证据，除非它曾经失败过**：把修复临时还原后重跑，
+   结果是 **15 failed + 1 collection error**；恢复修复后 **230 passed**。
+   这一步（falsification）才是测试有价值与否的分界线。

@@ -197,20 +197,25 @@ def analyze(req: AnalyzeRequest) -> dict:
 
     为什么这个接口要单独限流/限步数：它**真的会花钱**（调 LLM）。
     `max_steps` 上限 10 是成本保险丝；生产上还应加鉴权 + 配额。
-    """
-    from agent_lab.p1_react import MAX_STEPS, run_agent
-    import agent_lab.p1_react as react
 
-    old = react.MAX_STEPS
+    【踩坑记录 · 全局状态竞态】
+    原实现是 `react.MAX_STEPS = min(req.max_steps, MAX_STEPS)`，跑完再在 finally 里还原。
+    单请求正确，但同步 `def` 接口跑在 FastAPI 的**线程池**里，并发请求会交错：
+    后到的请求读到的是前一个请求改过的值，还原顺序也会互相覆盖 ——
+    A 请求设了 3 步，B 请求进来时 `old` 读到的是 3，B 还原时就把全局写回 3，
+    A 那边则可能按 B 的 10 步跑满（**多花钱**）。
+    修法：上限作为 `run_agent(max_steps=...)` 参数传入，全局常量只当默认值，不再被改写。
+    """
+    from agent_lab.p1_react import MAX_STEPS as STEP_CAP
+    from agent_lab.p1_react import run_agent
+
     try:
-        react.MAX_STEPS = min(req.max_steps, MAX_STEPS)
-        result = run_agent(req.question, verbose=False)
+        result = run_agent(req.question, verbose=False,
+                           max_steps=min(req.max_steps, STEP_CAP))
     except SystemExit as exc:                      # 没配 LLM_API_KEY 时 call_llm 会 SystemExit
         raise HTTPException(status_code=503, detail=f"LLM 未配置：{exc}") from exc
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"分析失败：{exc}") from exc
-    finally:
-        react.MAX_STEPS = old
     return {
         "answer": result.answer or "（未得出结论）",
         "stop_reason": result.stop_reason,
